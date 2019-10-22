@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Coffee is Light!</title>
+    <style>
+      .wrapper {
+        padding-top: 51%;
+        position: relative;
+      }
+      .image {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+      }
+      .canvas {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+      }
+      .textblock {
+        width: 20%;
+        height: 30%;
+        position: absolute;
+        top: 30%;
+        left: 5%;
+        border-radius: 25px;
+        padding: 20px;
+        background-color: #cee9f0;
+        box-shadow: 0 0 50px #68b3c6;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+      }
+      .text {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 24pt;
+      }
+      .textBig {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 44pt;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrapper">
+      <img src="/static/machine.svg" class="image" />
+      <canvas id="myCanvas" class="canvas"></canvas>
+      <div class="textblock">
+        <div id="title" class="text">Let's make some coffee!</div>
+        <div id="progress" class="textBig">Progress: 0%</div>
+      </div>
+    </div>
+
+    <script>
+      function updateCoffee(waterFill, coffeeFill) {
+        console.log(waterFill, coffeeFill);
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        var w = c.width;
+        var h = c.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // Coffee
+        var coffeeTop = 0.53;
+        var coffeeBottom = 0.26;
+        var coffeeHeight = coffeeTop - coffeeBottom;
+        var coffeeCurrent = coffeeHeight * coffeeFill;
+
+        ctx.beginPath();
+        ctx.lineWidth = "1";
+        ctx.fillStyle = "#6F4E37f0";
+        ctx.rect(
+          0.53 * w,
+          (coffeeTop + (coffeeHeight - coffeeCurrent)) * h,
+          w * 0.17,
+          h * coffeeCurrent
+        );
+        ctx.fill();
+
+        // Water
+        var leftMax = 0.33;
+        var leftMin = 0.34;
+        var leftTop = waterFill * (leftMax - leftMin) + leftMin;
+
+        var rightMax = 0.499;
+        var rightMin = 0.488;
+        var rightTop = waterFill * (rightMax - rightMin) + rightMin;
+
+        var waterTop = 0.1;
+        var waterBottom = 0.32;
+        var waterHeight = (waterBottom - waterTop) * (1 - waterFill);
+
+        ctx.beginPath();
+        ctx.lineWidth = "1";
+        ctx.fillStyle = "#0000ff60";
+        ctx.moveTo(leftTop * w, (waterTop + waterHeight) * h);
+        ctx.lineTo(rightTop * w, (waterTop + waterHeight) * h);
+        ctx.lineTo(rightMin * w, waterBottom * h);
+        ctx.lineTo(leftMin * w, waterBottom * h);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      var url = "/api";
+
+      function httpGet(theUrl) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", theUrl, false); // false for synchronous request
+        xmlHttp.send(null);
+        return JSON.parse(xmlHttp.responseText);
+      }
+
+      var timeOffset = 1000;
+
+      function updateData() {
+        try {
+          data = httpGet(url);
+          //data = { coffee: true, inProgress: 70, amount: 50 };
+
+          var title = document.getElementById("title");
+          var progress = document.getElementById("progress");
+
+          if (data.inProgress > 0 && data.inProgress < 100) {
+            title.innerHTML = "Someone is brewing for YOU! 😋";
+            progress.innerHTML = data.inProgress + "%";
+          } else if (data.coffee) {
+            title.innerHTML = "Coffee is ready! 🎉";
+            progress.innerHTML = "";
+          } else {
+            title.innerHTML = "Let's make some coffee?";
+            progress.innerHTML = "";
+          }
+
+          var fill = data.amount / 100
+          var ratio = data.inProgress / 100
+          var water = fill * (1 - ratio)
+          var coffee = fill * ratio
+
+          updateCoffee(water, coffee);
+        } catch (error) {}
+      }
+
+      updateData();
+      setInterval(updateData, timeOffset);
+
+    </script>
+  </body>
+</html>
